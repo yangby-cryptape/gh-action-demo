@@ -1,0 +1,29 @@
+name: 'GitHub Action Demo'
+description: 'A GitHub Action Demo'
+inputs:
+  crate-name:
+    description: "A binary (application) on the Rust community's crate registry."
+    required: true
+  binary-name:
+    description: 'The binary name. Use this name to cache the binary file.'
+    required: true
+  command:
+    description: 'The command to execute.'
+    required: true
+runs:
+  using: "composite"
+    steps:
+      - name: CacheKey
+        id: cache-key
+        run: echo "::set-output name=yyyymm::$(/bin/date -u "+%Y%m")"
+      - name: Cache
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/bin/${{ inputs.binary-name }}
+          key: gh-action-demo-${{ runner.os }}-${{ inputs.crate-name }}-${{ steps.cache-key.outputs.yyyymm }}
+      - name: Setup
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: "${HOME}/.cargo/bin/${{ inputs.binary-name }}" --version || cargo install "${{ inputs.crate-name }}" --locked
+      - name: Run
+        run: ${{ inputs.command }}
